@@ -1,8 +1,9 @@
 import streamlit as st
-import logic
+import logic  # Namma separate logic file
 import plotly.express as px
+import pandas as pd
 
-# 1. Page Configuration (React style)
+# 1. Page Configuration
 st.set_page_config(page_title="AI School ERP Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 # 2. Modern UI CSS Styling
@@ -45,44 +46,57 @@ else:
     # Sidebar Navigation Menu
     st.sidebar.markdown("<h2 style='text-align: center;'>Admin Menu</h2>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
-    menu = st.sidebar.radio("Navigate to:", ["🏠 Home Dashboard", "📤 Attendance Upload", "📝 Marks Entry", "🤖 AI Risk Insights", "⚙️ Settings"])
+    
+    # Unified Menu (Duplicate remove pannittaen)
+    menu = st.sidebar.radio("Navigate to:", ["🏠 Home Dashboard", "📤 Attendance Upload", "📝 Marks Entry", "🤖 AI Risk Insights"])
     
     st.sidebar.markdown("---")
     if st.sidebar.button("Log Out"):
         st.session_state['logged_in'] = False
         st.rerun()
 
-    # Dynamic Content based on Sidebar selection
-   if st.session_state['logged_in']:
-    menu = st.sidebar.radio("Navigate to:", ["🏠 Home Dashboard", "📤 Attendance Upload", "📝 Marks Entry", "🤖 AI Risk Insights"])
+    # Dynamic Content
+    if menu == "🏠 Home Dashboard":
+        st.title("📊 School Academic Overview")
+        m1, m2, m3, m4 = st.columns(4)
+        with m1: st.markdown("<div class='metric-card'><h4>Total Students</h4><h2>120</h2></div>", unsafe_allow_html=True)
+        with m2: st.markdown("<div class='metric-card'><h4>Avg Attendance</h4><h2>92%</h2></div>", unsafe_allow_html=True)
+        with m3: st.markdown("<div class='metric-card'><h4>Pass Rate</h4><h2>85%</h2></div>", unsafe_allow_html=True)
+        with m4: st.markdown("<div class='metric-card'><h4>Risk Alerts</h4><h2 style='color:red;'>12</h2></div>", unsafe_allow_html=True)
+        st.info("Welcome back! Please upload data in the sidebar to generate AI reports.")
 
-    if menu == "📤 Attendance Upload":
+    elif menu == "📤 Attendance Upload":
         st.title("📅 Monthly Attendance Management")
+        st.info("Upload the ERP sheet with 1 to 31 date columns.")
         file = st.file_uploader("Upload ERP Attendance", type=['xlsx', 'csv'])
         if file:
-            # logic.py-la irukura function-a inga use panrom
+            # logic.py-la irukura process_attendance function-a call panrom
             df_att = logic.process_attendance(file)
             st.session_state['att_data'] = df_att
-            st.success("Attendance Processed!")
+            st.success("Attendance Processed Successfully!")
             st.dataframe(df_att)
 
     elif menu == "📝 Marks Entry":
         st.title("✍️ Student Marks Management")
-        file = st.file_uploader("Upload Marks Sheet", type=['xlsx', 'csv'])
+        file = st.file_uploader("Upload Marks Sheet (Student_Name, Quarterly_Marks, HalfYearly_Marks)", type=['xlsx', 'csv'])
         if file:
-            import pandas as pd
             df_marks = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
             st.session_state['marks_data'] = df_marks
-            st.success("Marks Uploaded!")
+            st.success("Marks Data Uploaded!")
+            st.dataframe(df_marks)
 
     elif menu == "🤖 AI Risk Insights":
         st.title("🤖 AI-Driven Performance Prediction")
         if 'att_data' in st.session_state and 'marks_data' in st.session_state:
-            # Logic file-la irundhu AI result-a fetch panrom
+            # logic.py-la irukura get_ai_risk function-a call panrom
             final_df = logic.get_ai_risk(st.session_state['att_data'], st.session_state['marks_data'])
+            
+            st.subheader("AI Analysis Table")
             st.dataframe(final_df[['Student_Name', 'Attendance_%', 'HalfYearly_Marks', 'AI_Result']])
             
-            fig = px.scatter(final_df, x="Attendance_%", y="HalfYearly_Marks", color="AI_Result", hover_name="Student_Name")
-            st.plotly_chart(fig)
+            st.subheader("Visual Risk Mapping")
+            fig = px.scatter(final_df, x="Attendance_%", y="HalfYearly_Marks", color="AI_Result", 
+                             hover_name="Student_Name", size_max=60, title="Student Performance Risk Graph")
+            st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning("Please upload both Attendance and Marks data first!")
+            st.warning("Please upload both Attendance and Marks data first to see AI insights.")
