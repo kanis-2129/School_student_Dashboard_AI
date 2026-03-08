@@ -1,4 +1,6 @@
 import streamlit as st
+import logic
+import plotly.express as px
 
 # 1. Page Configuration (React style)
 st.set_page_config(page_title="AI School ERP Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -51,27 +53,36 @@ else:
         st.rerun()
 
     # Dynamic Content based on Sidebar selection
-    if menu == "🏠 Home Dashboard":
-        st.title("📊 School Academic Overview")
-        st.write("Overview of performance across all classes.")
-        
-        # UI Metric Cards (React look)
-        m1, m2, m3, m4 = st.columns(4)
-        with m1: st.markdown("<div class='metric-card'><h4>Total Students</h4><h2>1,250</h2></div>", unsafe_allow_html=True)
-        with m2: st.markdown("<div class='metric-card'><h4>Average Attendance</h4><h2>94%</h2></div>", unsafe_allow_html=True)
-        with m3: st.markdown("<div class='metric-card'><h4>Pass Percentage</h4><h2>88%</h2></div>", unsafe_allow_html=True)
-        with m4: st.markdown("<div class='metric-card'><h4>AI Risk Alerts</h4><h2 style='color:red;'>15</h2></div>", unsafe_allow_html=True)
+   if st.session_state['logged_in']:
+    menu = st.sidebar.radio("Navigate to:", ["🏠 Home Dashboard", "📤 Attendance Upload", "📝 Marks Entry", "🤖 AI Risk Insights"])
 
-    elif menu == "📤 Attendance Upload":
+    if menu == "📤 Attendance Upload":
         st.title("📅 Monthly Attendance Management")
-        st.info("Please upload the ERP generated attendance Excel sheet below.")
-        st.file_uploader("Drop Attendance Excel here", type=['xlsx', 'csv'])
+        file = st.file_uploader("Upload ERP Attendance", type=['xlsx', 'csv'])
+        if file:
+            # logic.py-la irukura function-a inga use panrom
+            df_att = logic.process_attendance(file)
+            st.session_state['att_data'] = df_att
+            st.success("Attendance Processed!")
+            st.dataframe(df_att)
 
     elif menu == "📝 Marks Entry":
         st.title("✍️ Student Marks Management")
-        st.selectbox("Select Exam Type", ["Quarterly", "Half-Yearly", "Unit Test", "Assignments"])
-        st.file_uploader("Upload Marks Sheet", type=['xlsx', 'csv'])
+        file = st.file_uploader("Upload Marks Sheet", type=['xlsx', 'csv'])
+        if file:
+            import pandas as pd
+            df_marks = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
+            st.session_state['marks_data'] = df_marks
+            st.success("Marks Uploaded!")
 
     elif menu == "🤖 AI Risk Insights":
         st.title("🤖 AI-Driven Performance Prediction")
-        st.warning("Data connection pending. Please upload Attendance & Marks to see AI analysis.")
+        if 'att_data' in st.session_state and 'marks_data' in st.session_state:
+            # Logic file-la irundhu AI result-a fetch panrom
+            final_df = logic.get_ai_risk(st.session_state['att_data'], st.session_state['marks_data'])
+            st.dataframe(final_df[['Student_Name', 'Attendance_%', 'HalfYearly_Marks', 'AI_Result']])
+            
+            fig = px.scatter(final_df, x="Attendance_%", y="HalfYearly_Marks", color="AI_Result", hover_name="Student_Name")
+            st.plotly_chart(fig)
+        else:
+            st.warning("Please upload both Attendance and Marks data first!")
