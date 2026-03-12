@@ -1,9 +1,12 @@
 import streamlit as st
-from pages import home
+from pages.home import show_home
+
+st.set_page_config(page_title="Teacher Portal", layout="centered")
 
 st.title("Teacher Portal")
 
-# Session storage
+# ---------------- SESSION STORAGE ----------------
+
 if "registered_users" not in st.session_state:
     st.session_state.registered_users = {}
 
@@ -15,6 +18,7 @@ if "current_user" not in st.session_state:
 
 
 # ---------------- REGISTER PAGE ----------------
+
 if st.session_state.page == "register":
 
     st.subheader("Teacher Register")
@@ -43,6 +47,7 @@ if st.session_state.page == "register":
 
 
 # ---------------- LOGIN PAGE ----------------
+
 elif st.session_state.page == "login":
 
     st.subheader("Teacher Login")
@@ -66,8 +71,5 @@ elif st.session_state.page == "login":
 
 # ---------------- HOME PAGE ----------------
 
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
-if st.session_state.page == "home":
-    home.show_home()
+elif st.session_state.page == "home":
+    show_home()
