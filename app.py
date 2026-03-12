@@ -1,4 +1,5 @@
 import streamlit as st
+from pages import home
 
 st.title("Teacher Portal")
 
@@ -64,17 +65,9 @@ elif st.session_state.page == "login":
 
 
 # ---------------- HOME PAGE ----------------
-elif st.session_state.page == "home":
 
-    username = st.session_state.current_user
-    name = st.session_state.registered_users[username]["name"]
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-    st.success(f"Welcome {name} 👋")
-
-    st.title("Teacher Home Page")
-
-    st.write("You are successfully logged in.")
-
-    if st.button("Logout"):
-        st.session_state.page = "login"
-        st.rerun()
+if st.session_state.page == "home":
+    home.show_home()
